@@ -1,0 +1,18 @@
+<atlassian-plugin key="${atlassian.plugin.key}" name="${project.name}" plugins-version="2">
+
+	<plugin-info>
+		<description>${project.description}</description>
+		<version>${project.version}</version>
+		<vendor name="${project.organization.name}" url="${project.organization.url}" />
+	</plugin-info>
+
+	<resource type="i18n" name="Inject environment variables to file(s)" location="nhb.bamboo.plugins.evi.en" />
+
+	<taskType name="Inject environment variables to file(s)" class="nhb.bamboo.plugins.evi.EVITask" key="evi">
+		<description>Inject environment variables to file(s)</description>
+		<category name="variables" />
+		<configuration class="nhb.bamboo.plugins.evi.EVIConfigurator" />
+		<resource type="freemarker" name="edit" location="editEVI.ftl" />
+	</taskType>
+
+</atlassian-plugin>

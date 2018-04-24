@@ -18,6 +18,11 @@ import com.atlassian.sal.api.message.I18nResolver;
 @Component
 public class EVIConfigurator extends AbstractTaskConfigurator {
 
+	private static final String DEFAULT_PATTERN = "\\$\\{([A-Za-z0-9_\\.]+)\\}";
+
+	private static final String[] FIELDS = new String[] { "filePath", "pattern", "nonCaseSensitive",
+			"ignoreNonExistingVariables" };
+
 	private final I18nResolver i18nResolver;
 
 	@Autowired
@@ -30,18 +35,23 @@ public class EVIConfigurator extends AbstractTaskConfigurator {
 			@Nullable final TaskDefinition previousTaskDefinition) {
 		final Map<String, String> config = (Map<String, String>) super.generateTaskConfigMap(params,
 				previousTaskDefinition);
-		config.put("filePath", params.getString("filePath"));
+		for (String field : FIELDS) {
+			config.put(field, params.getString(field));
+		}
 		return config;
 	}
 
 	public void populateContextForCreate(@NotNull final Map<String, Object> context) {
 		super.populateContextForCreate(context);
+		context.put("pattern", DEFAULT_PATTERN);
 	}
 
 	public void populateContextForEdit(@NotNull final Map<String, Object> context,
 			@NotNull final TaskDefinition taskDefinition) {
 		super.populateContextForEdit(context, taskDefinition);
-		context.put("filePath", taskDefinition.getConfiguration().get("filePath"));
+		for (String field : FIELDS) {
+			context.put(field, taskDefinition.getConfiguration().get(field));
+		}
 	}
 
 	public void validate(@NotNull final ActionParametersMap params, @NotNull final ErrorCollection errorCollection) {

@@ -4,6 +4,8 @@
 		<description>${project.description}</description>
 		<version>${project.version}</version>
 		<vendor name="${project.organization.name}" url="${project.organization.url}" />
+		<param name="plugin-icon">logo.png</param>
+		<param name="plugin-logo">logo.png</param>
 	</plugin-info>
 
 	<resource type="i18n" name="Inject environment variables to file(s)" location="en" />

@@ -9,12 +9,15 @@ import java.io.StringWriter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.tools.ant.DirectoryScanner;
 
 import com.atlassian.bamboo.build.logger.BuildLogger;
 import com.atlassian.bamboo.task.CommonTaskContext;
@@ -58,9 +61,7 @@ public class EVITask implements CommonTaskType {
 		return result;
 	}
 
-	private static final String getTextFileContent(String filePath) throws Exception {
-		File file = new File(filePath);
-
+	private static final String getTextFileContent(File file) throws Exception {
 		try (InputStream is = new FileInputStream(file); StringWriter sw = new StringWriter()) {
 			IOUtils.copy(is, sw);
 			return sw.toString();
@@ -89,6 +90,25 @@ public class EVITask implements CommonTaskType {
 		return results;
 	}
 
+	private static final Set<File> scanForFiles(String workingFolder, String wildcardFileName) {
+		File dir = new File(workingFolder);
+		if (!dir.exists() || !dir.isDirectory()) {
+			throw new IllegalArgumentException("Working directory must exist and is a folder");
+		}
+
+		DirectoryScanner scanner = new DirectoryScanner();
+		scanner.setIncludes(new String[] { wildcardFileName });
+		scanner.setBasedir(dir);
+		scanner.setCaseSensitive(false);
+		scanner.scan();
+
+		Set<File> results = new HashSet<>();
+		for (String fileName : scanner.getIncludedFiles()) {
+			results.add(dir.toPath().resolve(fileName).toFile());
+		}
+		return results;
+	}
+
 	@Override
 	public TaskResult execute(CommonTaskContext taskContext) throws TaskException {
 		final BuildLogger logger = taskContext.getBuildLogger();
@@ -97,9 +117,6 @@ public class EVITask implements CommonTaskType {
 		final boolean ignoreCase = taskContext.getConfigurationMap().getAsBoolean("nonCaseSensitive");
 		final boolean ignoreNonExistingVariables = taskContext.getConfigurationMap()
 				.getAsBoolean("ignoreNonExistingVariables");
-
-		final String filePaths = taskContext.getConfigurationMap().get("filePath");
-		String[] paths = filePaths.split("\\r?\\n");
 
 		final Map<String, String> allVariables = fetchAllVariables(taskContext, ignoreCase);
 
@@ -110,38 +127,48 @@ public class EVITask implements CommonTaskType {
 
 		final Collection<FileAndVariables> tobeProcessed = new LinkedList<>();
 
-		for (String filePath : paths) {
-			filePath = filePath.trim();
-			if (filePath.length() > 0) {
-				filePath = taskContext.getWorkingDirectory() + "/" + filePath;
-				logger.addBuildLogEntry("File to be injected variables: " + filePath);
+		final String filePaths = taskContext.getConfigurationMap().get("filePath");
+		String[] wildcardFileNames = filePaths.split("\\r?\\n");
+		for (String wildcardFileName : wildcardFileNames) {
+			wildcardFileName = wildcardFileName.trim();
+			if (wildcardFileName.length() > 0) {
+				Set<File> matchedFiles = scanForFiles(taskContext.getWorkingDirectory().getAbsolutePath(),
+						wildcardFileName);
 
-				String fileContent = null;
-				try {
-					fileContent = getTextFileContent(filePath);
-				} catch (Exception e) {
-					throw new TaskException("Cannot get file content from " + filePath, e);
-				}
+				for (File file : matchedFiles) {
+					String filePath = file.getAbsolutePath();
+					String fileContent = null;
 
-				Collection<String[]> variableNameGroups = extractVariableNameGroups(fileContent, regexPattern,
-						ignoreCase, logger);
+					try {
+						fileContent = getTextFileContent(file);
+					} catch (Exception e) {
+						throw new TaskException("Cannot get file content from " + filePath, e);
+					}
 
-				logger.addBuildLogEntry("Found " + variableNameGroups.size() + " variable name groups");
+					if (fileContent != null) {
+						Collection<String[]> variableNameGroups = extractVariableNameGroups(fileContent, regexPattern,
+								ignoreCase, logger);
 
-				Map<String, String> variables = new HashMap<>();
-				for (String[] groups : variableNameGroups) {
-					String key = ignoreCase ? groups[1].toLowerCase() : groups[1];
-					logger.addBuildLogEntry("--> variable name groups: " + Arrays.asList(groups));
-					if (allVariables.containsKey(key)) {
-						variables.putIfAbsent(groups[0], allVariables.get(key));
-					} else if (!ignoreNonExistingVariables) {
-						throw new TaskException("File '" + filePath + "' require a variable named '" + groups[1] + "' ("
-								+ (ignoreCase ? "case-insensitive" : "case sensitive")
-								+ "), but that one cannot be found in environment variables");
+						logger.addBuildLogEntry("Found " + variableNameGroups.size() + " variable name groups");
+
+						Map<String, String> variables = new HashMap<>();
+						for (String[] groups : variableNameGroups) {
+							String key = ignoreCase ? groups[1].toLowerCase() : groups[1];
+							logger.addBuildLogEntry("--> variable name groups: " + Arrays.asList(groups));
+							if (allVariables.containsKey(key)) {
+								variables.putIfAbsent(groups[0], allVariables.get(key));
+							} else if (!ignoreNonExistingVariables) {
+								throw new TaskException("File '" + filePath + "' require a variable named '" + groups[1]
+										+ "' (case " + (ignoreCase ? "in" : "")
+										+ "sensitive), but that one cannot be found in environment variables");
+							} else {
+								logger.addBuildLogEntry("Ignore " + groups[0] + " because of non-exists variable");
+							}
+						}
+
+						tobeProcessed.add(new FileAndVariables(filePath, fileContent, variables));
 					}
 				}
-
-				tobeProcessed.add(new FileAndVariables(filePath, fileContent, variables));
 			}
 		}
 
@@ -186,21 +213,4 @@ public class EVITask implements CommonTaskType {
 		private final Map<String, String> variables;
 	}
 
-	// public static void main(String[] args) {
-	// String text = "<a>" //
-	// + "<b>${DB_URL}</b>" //
-	// + "<c>${DB_USER}</c>" //
-	// + "<d>${DB_PASSWORD}</d>" //
-	// + "<b>${db_url}</b>" //
-	// + "<c>${DB_user}</c>" //
-	// + "<d>${db_PASSWORD}</d>" //
-	// + "<e>${db_timeout}</e>" //
-	// + "</a>";
-	// String regex = "\\$\\{([A-Za-z0-9_\\.]+)\\}";
-	// Pattern pattern = Pattern.compile(regex);
-	// Matcher matcher = pattern.matcher(text);
-	// while (matcher.find()) {
-	// System.out.println(matcher.group(0) + " -> " + matcher.group(1));
-	// }
-	// }
 }

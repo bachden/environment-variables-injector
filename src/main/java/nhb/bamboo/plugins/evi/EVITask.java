@@ -6,7 +6,6 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -138,7 +137,7 @@ public class EVITask implements CommonTaskType {
 				for (File file : matchedFiles) {
 					String filePath = file.getAbsolutePath();
 					String fileContent = null;
-
+					logger.addBuildLogEntry("**************** Process variables injecting on file " + filePath);
 					try {
 						fileContent = getTextFileContent(file);
 					} catch (Exception e) {
@@ -154,15 +153,17 @@ public class EVITask implements CommonTaskType {
 						Map<String, String> variables = new HashMap<>();
 						for (String[] groups : variableNameGroups) {
 							String key = ignoreCase ? groups[1].toLowerCase() : groups[1];
-							logger.addBuildLogEntry("--> variable name groups: " + Arrays.asList(groups));
 							if (allVariables.containsKey(key)) {
-								variables.putIfAbsent(groups[0], allVariables.get(key));
-							} else if (!ignoreNonExistingVariables) {
+								String value = allVariables.get(key);
+								logger.addBuildLogEntry("Mark to inject: " + groups[0] + " -> " + value);
+
+								variables.putIfAbsent(groups[0], value);
+							} else if (ignoreNonExistingVariables) {
+								logger.addBuildLogEntry("Skip " + groups[0] + " because of non-exists variable");
+							} else {
 								throw new TaskException("File '" + filePath + "' require a variable named '" + groups[1]
 										+ "' (case " + (ignoreCase ? "in" : "")
 										+ "sensitive), but that one cannot be found in environment variables");
-							} else {
-								logger.addBuildLogEntry("Ignore " + groups[0] + " because of non-exists variable");
 							}
 						}
 

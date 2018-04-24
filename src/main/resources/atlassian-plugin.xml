@@ -6,7 +6,7 @@
 		<vendor name="${project.organization.name}" url="${project.organization.url}" />
 	</plugin-info>
 
-	<resource type="i18n" name="Inject environment variables to file(s)" location="nhb.bamboo.plugins.evi.en" />
+	<resource type="i18n" name="Inject environment variables to file(s)" location="en" />
 
 	<taskType name="Inject environment variables to file(s)" class="nhb.bamboo.plugins.evi.EVITask" key="evi">
 		<description>Inject environment variables to file(s)</description>

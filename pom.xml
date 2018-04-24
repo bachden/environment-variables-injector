@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
@@ -10,8 +9,8 @@
 	<version>1.1.0</version>
 
 	<organization>
-		<name>Example Company</name>
-		<url>http://www.example.com/</url>
+		<name>Bach Hoang Nguyen</name>
+		<url>https://github.com/bachden/environment-variables-injector</url>
 	</organization>
 
 	<name>environment-variables-injector</name>
@@ -24,8 +23,7 @@
 		<amps.version>6.3.15</amps.version>
 		<plugin.testrunner.version>1.2.3</plugin.testrunner.version>
 		<atlassian.spring.scanner.version>1.2.13</atlassian.spring.scanner.version>
-		<!-- This key is used to keep the consistency between the key in atlassian-plugin.xml 
-			and the key to generate bundle. -->
+		<!-- This key is used to keep the consistency between the key in atlassian-plugin.xml and the key to generate bundle. -->
 		<atlassian.plugin.key>${project.groupId}.${project.artifactId}</atlassian.plugin.key>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -75,6 +73,7 @@
 			<version>${plugin.testrunner.version}</version>
 			<scope>test</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>javax.ws.rs</groupId>
 			<artifactId>jsr311-api</artifactId>
@@ -86,6 +85,7 @@
 			<artifactId>gson</artifactId>
 			<version>2.2.2-atlassian-1</version>
 		</dependency>
+
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -114,7 +114,6 @@
 
 						<!-- Add package to export here -->
 						<Export-Package>
-							nhb.bamboo.plugins.api,
 						</Export-Package>
 
 						<!-- Add package import here -->

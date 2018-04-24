@@ -56,10 +56,16 @@ public class EVIConfigurator extends AbstractTaskConfigurator {
 
 	public void validate(@NotNull final ActionParametersMap params, @NotNull final ErrorCollection errorCollection) {
 		super.validate(params, errorCollection);
+
 		final String sayValue = params.getString("filePath");
 		if (StringUtils.isBlank((CharSequence) sayValue)) {
 			errorCollection.addError("filePath",
 					this.i18nResolver.getText("nhb.bamboo.plugins.evi.text.filePathError"));
+		}
+
+		final String pattern = params.getString("pattern");
+		if (StringUtils.isBlank(pattern)) {
+			errorCollection.addError("pattern", this.i18nResolver.getText("nhb.bamboo.plugins.evi.text.patternError"));
 		}
 	}
 }

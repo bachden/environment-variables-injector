@@ -119,7 +119,7 @@ public class EVITask implements CommonTaskType {
 
 		final Map<String, String> allVariables = fetchAllVariables(taskContext, ignoreCase);
 
-		logger.addBuildLogEntry("All variables: " + allVariables);
+		// logger.addBuildLogEntry("All variables: " + allVariables);
 		logger.addBuildLogEntry("Regex pattern: " + regexPattern);
 		logger.addBuildLogEntry("Ignore case: " + ignoreCase);
 		logger.addBuildLogEntry("Ignore non-existing variables: " + ignoreNonExistingVariables);
@@ -155,7 +155,7 @@ public class EVITask implements CommonTaskType {
 							String key = ignoreCase ? groups[1].toLowerCase() : groups[1];
 							if (allVariables.containsKey(key)) {
 								String value = allVariables.get(key);
-								logger.addBuildLogEntry("Mark to inject: " + groups[0] + " -> " + value);
+								logger.addBuildLogEntry("Mark to inject: " + groups[0]);
 
 								variables.putIfAbsent(groups[0], value);
 							} else if (ignoreNonExistingVariables) {
@@ -179,8 +179,7 @@ public class EVITask implements CommonTaskType {
 			try {
 				newFileContent = findAndReplace(entry.fileContent, entry.variables, ignoreCase, logger);
 			} catch (Exception e) {
-				throw new TaskException("Inject variables error on file content " + entry.fileContent + ", variables: "
-						+ entry.variables, e);
+				throw new TaskException("Inject variables error on file " + entry.filePath, e);
 			}
 
 			if (newFileContent != null) {

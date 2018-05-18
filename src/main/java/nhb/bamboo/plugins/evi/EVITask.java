@@ -55,7 +55,12 @@ public class EVITask implements CommonTaskType {
 		for (Object keyObj : variables.keySet()) {
 			String key = keyObj.toString();
 			String value = variables.get(key);
-			result = result.replaceAll((ignoreCase ? "(?i)" : "") + normalizeForRegex(key), value);
+			try {
+				result = result.replaceAll((ignoreCase ? "(?i)" : "") + normalizeForRegex(key), value);
+			} catch (Exception ex) {
+				logger.addBuildLogEntry("Error while inject value " + value + " for key `" + key + "`");
+				throw ex;
+			}
 		}
 		return result;
 	}
@@ -203,6 +208,7 @@ public class EVITask implements CommonTaskType {
 		for (final VariableDefinitionContext vdc : variables) {
 			allVariables.put(nonCaseSensitive ? vdc.getKey().toLowerCase() : vdc.getKey(), vdc.getValue());
 		}
+		
 		return allVariables;
 	}
 
